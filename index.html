@@ -41,6 +41,10 @@ h1{font:500 clamp(42px,6vw,70px)/.98 "Playfair Display",serif;letter-spacing:0;m
 .reading{border-left:1px solid var(--line);padding:15px 0 15px 28px;min-height:190px}
 .label{color:var(--lime)}.reading h2{font:500 30px "Playfair Display",serif;margin:20px 0 8px}
 .reading p{margin:0;color:#b9c3b8;font-size:14px;line-height:1.6}
+.share-reading{margin-top:16px;padding:8px 10px;border:1px solid var(--line);background:transparent;color:var(--paper);font:500 11px "DM Mono",monospace;text-transform:uppercase;cursor:pointer}
+.share-reading:hover:not(:disabled){border-color:var(--lime);color:var(--lime)}
+.share-reading:disabled{opacity:.45;cursor:not-allowed}
+.share-status{margin-left:10px;color:var(--lime);font:11px "DM Mono",monospace}
 .history-wrap{margin-top:30px;display:flex;gap:22px;align-items:center;color:#9ba89b}
 .history-list{display:flex;gap:8px;flex-wrap:wrap}.history-item{border:1px solid var(--line);padding:7px 10px;font:11px "DM Mono",monospace}
 footer{display:flex;justify-content:space-between;margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:#8e9b8f;font:10px "DM Mono",monospace;text-transform:uppercase}
@@ -67,6 +71,8 @@ footer{display:flex;justify-content:space-between;margin-top:56px;padding-top:16
       <div class="label">Your reading</div>
       <h2 id="title">The table is quiet.</h2>
       <p id="message">When you’re ready, let chance speak.</p>
+      <button class="share-reading" id="share-reading" type="button" disabled>Share reading ↗</button>
+      <span class="share-status" id="share-status" role="status" aria-live="polite"></span>
     </div>
   </section>
   <div class="history-wrap"><span class="history">Recent signs</span><div class="history-list" id="history">No rolls yet</div></div>
@@ -114,24 +120,80 @@ const fortunes=[
 const die=document.querySelector("#die"),button=document.querySelector("#roll");
 const title=document.querySelector("#title"),message=document.querySelector("#message");
 const history=document.querySelector("#history");
+const shareButton=document.querySelector("#share-reading"),shareStatus=document.querySelector("#share-status");
 const faces={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const pips=[...die.querySelectorAll(".pip")];
+const showFace=face=>pips.forEach((pip,i)=>pip.classList.toggle("on",faces[face].includes(i)));
 let recent=[];
+let audioContext;
+function playDiceSound(){
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return;
+  audioContext??=new AudioContextClass();
+  if(audioContext.state==="suspended")void audioContext.resume().catch(()=>{});
+  const now=audioContext.currentTime;
+  const buffer=audioContext.createBuffer(1,Math.floor(audioContext.sampleRate*.05),audioContext.sampleRate);
+  const samples=buffer.getChannelData(0);
+  for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+  [0,.08,.16,.24].forEach((offset,tap)=>{
+    const source=audioContext.createBufferSource();
+    const filter=audioContext.createBiquadFilter();
+    const gain=audioContext.createGain();
+    const start=now+offset;
+    source.buffer=buffer;
+    filter.type="lowpass";
+    filter.frequency.value=1600;
+    gain.gain.setValueAtTime(.0001,start);
+    gain.gain.exponentialRampToValueAtTime(.045-tap*.008,start+.004);
+    gain.gain.exponentialRampToValueAtTime(.0001,start+.045);
+    source.connect(filter).connect(gain).connect(audioContext.destination);
+    source.start(start);
+    source.stop(start+.05);
+  });
+}
+shareButton.addEventListener("click",async()=>{
+  const reading=`${title.textContent} — ${message.textContent}`;
+  const url=new URL("./",location.href).href;
+  try{
+    if(navigator.share){
+      await navigator.share({title:"Fate / A Dice Oracle",text:reading,url});
+      shareStatus.textContent="Shared";
+    }else{
+      await navigator.clipboard.writeText(`${reading}\n${url}`);
+      shareStatus.textContent="Copied";
+    }
+  }catch(error){
+    if(error.name==="AbortError")return;
+    try{
+      await navigator.clipboard.writeText(`${reading}\n${url}`);
+      shareStatus.textContent="Copied instead";
+    }catch{
+      shareStatus.textContent="Sharing unavailable";
+    }
+  }
+});
 button.addEventListener("click",()=>{
   if(button.disabled)return;
+  playDiceSound();
+  navigator.vibrate?.([12,8,20]);
+  shareButton.disabled=true;shareStatus.textContent="";
   button.disabled=true;die.classList.remove("rolling");void die.offsetWidth;die.classList.add("rolling");
+  const shuffle=setInterval(()=>showFace(Math.floor(Math.random()*6)+1),85);
   const values=new Uint32Array(2);crypto.getRandomValues(values);
   const roll=values[0]%6+1;
   const fortune=fortunes[roll-1][values[1]%fortunes[roll-1].length];
   setTimeout(()=>{
-    die.querySelectorAll(".pip").forEach((pip,i)=>pip.classList.toggle("on",faces[roll].includes(i)));
+    clearInterval(shuffle);
+    showFace(roll);
     die.setAttribute("aria-label",`A die showing ${roll}`);
     [title.textContent,message.textContent]=fortune;
+    shareButton.disabled=false;
     recent.unshift(`${String(roll).padStart(2,"0")} · ${fortune[0]}`);recent=recent.slice(0,3);
     history.innerHTML=recent.map(item=>`<span class="history-item">${item}</span>`).join("");
     die.classList.remove("rolling");button.disabled=false;
   },720);
 });
-document.querySelectorAll(".pip").forEach((pip,i)=>pip.classList.toggle("on",faces[1].includes(i)));
+showFace(1);
 </script>
 </body>
 </html>
