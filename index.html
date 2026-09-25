@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fate / A Dice Oracle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@500;600&display=swap');
+:root{--ink:#14251f;--paper:#f3efdf;--lime:#d8f36a;--coral:#fa8068;--line:#ffffff30}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--ink);color:var(--paper);font-family:"DM Sans",sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;background:repeating-linear-gradient(115deg,transparent 0 38px,#d8f36a 39px,transparent 40px 78px);mask-image:linear-gradient(90deg,#000,transparent 85%)}
+header{height:76px;padding:0 6vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand,.eyebrow,.label,.history{font:500 11px "DM Mono",monospace;letter-spacing:1px;text-transform:uppercase}
+.brand{color:var(--lime)}.status{font:11px "DM Mono",monospace;color:#c4cbbf}
+main{width:min(1080px,88vw);margin:0 auto;padding:48px 0 36px}
+.topline{display:flex;justify-content:space-between;align-items:center;color:var(--lime)}
+h1{font:500 clamp(42px,6vw,70px)/.98 "Playfair Display",serif;letter-spacing:0;margin:22px 0 12px;max-width:620px}
+.sub{color:#b9c3b8;margin:0;font-size:14px}
+.stage{display:grid;grid-template-columns:1fr 300px;gap:70px;align-items:center;margin-top:44px}
+.play{min-height:370px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-block:1px solid var(--line);position:relative}
+.play:before,.play:after{content:"";position:absolute;width:310px;height:310px;border:1px solid #d8f36a30;border-radius:50%;pointer-events:none}
+.play:after{width:370px;height:370px;border-style:dashed;opacity:.5}
+.die{z-index:1;width:142px;aspect-ratio:1;background:var(--paper);border:8px solid #ded9c8;border-radius:22px;box-shadow:0 18px 55px #0006;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:20px;gap:6px;transform:rotate(-7deg)}
+.die.rolling{animation:dice-roll 720ms cubic-bezier(.2,.8,.2,1) both}
+@keyframes dice-roll{
+  0%{transform:translateY(0) rotate(-7deg) scale(1)}
+  24%{transform:translateY(-28px) rotate(165deg) scale(.94)}
+  52%{transform:translateY(5px) rotate(355deg) scale(1.03)}
+  78%{transform:translateY(-12px) rotate(548deg) scale(.98)}
+  100%{transform:translateY(0) rotate(713deg) scale(1)}
+}
+.pip{background:var(--ink);border-radius:50%;visibility:hidden}
+.pip.on{visibility:visible}
+.roll{z-index:1;margin-top:30px;padding:13px 23px;border:0;border-radius:2px;background:var(--lime);color:var(--ink);font:500 12px "DM Mono",monospace;text-transform:uppercase;cursor:pointer}
+.roll:hover{background:var(--coral);transform:translateY(-2px)}.roll:disabled{opacity:.65;cursor:wait}
+.reading{border-left:1px solid var(--line);padding:15px 0 15px 28px;min-height:190px}
+.label{color:var(--lime)}.reading h2{font:500 30px "Playfair Display",serif;margin:20px 0 8px}
+.reading p{margin:0;color:#b9c3b8;font-size:14px;line-height:1.6}
+.history-wrap{margin-top:30px;display:flex;gap:22px;align-items:center;color:#9ba89b}
+.history-list{display:flex;gap:8px;flex-wrap:wrap}.history-item{border:1px solid var(--line);padding:7px 10px;font:11px "DM Mono",monospace}
+footer{display:flex;justify-content:space-between;margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:#8e9b8f;font:10px "DM Mono",monospace;text-transform:uppercase}
+@media(max-width:700px){header{padding:0 6vw}main{padding-top:34px}.stage{grid-template-columns:1fr;gap:26px;margin-top:30px}.play{min-height:320px}.reading{border-left:0;border-top:1px solid var(--line);padding:22px 0 0;min-height:150px}.history-wrap{align-items:flex-start;flex-direction:column;gap:12px}footer{gap:18px;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header><div class="brand">✳ Fate / Oracle No. 06</div><div class="status">No stakes · Just signs</div></header>
+<main>
+  <div class="topline"><span class="eyebrow">A chance encounter</span><span class="eyebrow">01 — 06</span></div>
+  <h1>Let the moment<br>make its move.</h1>
+  <p class="sub">One roll. One small sign from the universe.</p>
+  <section class="stage" aria-label="Destiny dice oracle">
+    <div class="play">
+      <div class="die" id="die" role="img" aria-label="A die showing one">
+        <i class="pip"></i><i class="pip"></i><i class="pip"></i>
+        <i class="pip"></i><i class="pip"></i><i class="pip"></i>
+        <i class="pip"></i><i class="pip"></i><i class="pip"></i>
+      </div>
+      <button class="roll" id="roll">Roll the die ↗</button>
+    </div>
+    <div class="reading" aria-live="polite">
+      <div class="label">Your reading</div>
+      <h2 id="title">The table is quiet.</h2>
+      <p id="message">When you’re ready, let chance speak.</p>
+    </div>
+  </section>
+  <div class="history-wrap"><span class="history">Recent signs</span><div class="history-list" id="history">No rolls yet</div></div>
+  <footer><span>Trust your own timing</span><span>For reflection, not prediction</span></footer>
+</main>
+<script>
+const fortunes=[
+  ["Begin again","A clean slate is closer than it looks."],
+  ["Take the long way","The detour has something for you."],
+  ["Say it plainly","Honesty opens the next door."],
+  ["Wait for the green","Patience is part of the play."],
+  ["Make the small bet","A little courage can travel far."],
+  ["Keep what matters","Not every tempting thing is yours."]
+];
+const die=document.querySelector("#die"),button=document.querySelector("#roll");
+const title=document.querySelector("#title"),message=document.querySelector("#message");
+const history=document.querySelector("#history");
+const faces={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+let recent=[];
+button.addEventListener("click",()=>{
+  if(button.disabled)return;
+  button.disabled=true;die.classList.remove("rolling");void die.offsetWidth;die.classList.add("rolling");
+  const values=new Uint32Array(1);crypto.getRandomValues(values);
+  const roll=values[0]%6+1;
+  setTimeout(()=>{
+    die.querySelectorAll(".pip").forEach((pip,i)=>pip.classList.toggle("on",faces[roll].includes(i)));
+    die.setAttribute("aria-label",`A die showing ${roll}`);
+    [title.textContent,message.textContent]=fortunes[roll-1];
+    recent.unshift(`${String(roll).padStart(2,"0")} · ${fortunes[roll-1][0]}`);recent=recent.slice(0,3);
+    history.innerHTML=recent.map(item=>`<span class="history-item">${item}</span>`).join("");
+    die.classList.remove("rolling");button.disabled=false;
+  },720);
+});
+document.querySelectorAll(".pip").forEach((pip,i)=>pip.classList.toggle("on",faces[1].includes(i)));
+</script>
+</body>
+</html>
