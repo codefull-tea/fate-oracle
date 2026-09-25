@@ -1,0 +1,23 @@
+{
+  "name": "Fate / A Dice Oracle",
+  "short_name": "Fate Oracle",
+  "description": "Roll once. Find your sign.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14251f",
+  "theme_color": "#14251f",
+  "icons": [
+    {
+      "src": "./icons/fate-oracle-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/fate-oracle-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
