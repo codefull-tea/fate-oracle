@@ -70,12 +70,42 @@ footer{display:flex;justify-content:space-between;margin-top:56px;padding-top:16
 </main>
 <script>
 const fortunes=[
-  ["Begin again","A clean slate is closer than it looks."],
-  ["Take the long way","The detour has something for you."],
-  ["Say it plainly","Honesty opens the next door."],
-  ["Wait for the green","Patience is part of the play."],
-  ["Make the small bet","A little courage can travel far."],
-  ["Keep what matters","Not every tempting thing is yours."]
+  [
+    ["Begin again","A clean slate is closer than it looks."],
+    ["Open the door","Something new responds when you do."],
+    ["Start small","The first step is enough for today."],
+    ["Return to it","An old idea may be ready now."]
+  ],
+  [
+    ["Take the long way","The detour has something for you."],
+    ["Follow curiosity","The interesting path is worth a look."],
+    ["Change the scenery","A fresh view can shift the answer."],
+    ["Try the other door","A different route may fit better."]
+  ],
+  [
+    ["Say it plainly","Honesty opens the next door."],
+    ["Ask the question","The answer starts with asking."],
+    ["Make the call","A clear reach beats another guess."],
+    ["Share the idea","The right person can help it grow."]
+  ],
+  [
+    ["Wait for the green","Patience is part of the play."],
+    ["Let it breathe","A pause can make the next move clearer."],
+    ["Watch for the signal","The opening will be easier to recognize soon."],
+    ["Don't force it","Slow progress is still progress."]
+  ],
+  [
+    ["Make the small bet","A little courage can travel far."],
+    ["Take the first step","Small courage still counts."],
+    ["Choose the brave version","The better story asks for a little nerve."],
+    ["Back your idea","You have more reason than you think."]
+  ],
+  [
+    ["Keep what matters","Not every tempting thing is yours."],
+    ["Set a boundary","A clear no protects a better yes."],
+    ["Choose your people","Good company changes the odds."],
+    ["Spend your energy well","Not everything deserves your best."]
+  ]
 ];
 const die=document.querySelector("#die"),button=document.querySelector("#roll");
 const title=document.querySelector("#title"),message=document.querySelector("#message");
@@ -85,13 +115,14 @@ let recent=[];
 button.addEventListener("click",()=>{
   if(button.disabled)return;
   button.disabled=true;die.classList.remove("rolling");void die.offsetWidth;die.classList.add("rolling");
-  const values=new Uint32Array(1);crypto.getRandomValues(values);
+  const values=new Uint32Array(2);crypto.getRandomValues(values);
   const roll=values[0]%6+1;
+  const fortune=fortunes[roll-1][values[1]%fortunes[roll-1].length];
   setTimeout(()=>{
     die.querySelectorAll(".pip").forEach((pip,i)=>pip.classList.toggle("on",faces[roll].includes(i)));
     die.setAttribute("aria-label",`A die showing ${roll}`);
-    [title.textContent,message.textContent]=fortunes[roll-1];
-    recent.unshift(`${String(roll).padStart(2,"0")} · ${fortunes[roll-1][0]}`);recent=recent.slice(0,3);
+    [title.textContent,message.textContent]=fortune;
+    recent.unshift(`${String(roll).padStart(2,"0")} · ${fortune[0]}`);recent=recent.slice(0,3);
     history.innerHTML=recent.map(item=>`<span class="history-item">${item}</span>`).join("");
     die.classList.remove("rolling");button.disabled=false;
   },720);
